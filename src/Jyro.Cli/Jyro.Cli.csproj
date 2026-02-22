@@ -1,0 +1,45 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFramework>net10.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+
+		<!-- Package Information -->
+		<PackageId>Mesch.Jyro.Cli</PackageId>
+		<AssemblyName>Jyro</AssemblyName>
+		<RootNamespace>Jyro.Cli</RootNamespace>
+		<Version>0.9.2</Version>
+		<Authors>Mesch Systems</Authors>
+		<Company>Mesch Systems</Company>
+		<Summary>Command line interpreter for the Jyro language.</Summary>
+		<Product>Jyro</Product>
+		<Description>Jyro is an imperative data manipulation language designed for secure, sandboxed processing of JSON-like data structures.</Description>
+		<PackageProjectUrl>https://github.com/meschsystems/jyro</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/meschsystems/jyro</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<Copyright>Copyright © 2025-2026 Mesch Systems.</Copyright>
+		<PackageTags>jyro;command;scripting;json;language;sandbox;commandline</PackageTags>
+
+		<!-- IL2040/IL2104: trim warnings internal to FSharp.Core and FParsecCS NuGet packages -->
+		<NoWarn>IL2040;IL2104</NoWarn>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="FSharp.Core" Version="10.0.102" />
+		<PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
+		<PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="9.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.0" />
+		<ProjectReference Include="..\..\..\jyro\src\Jyro.Api\Jyro.Api.fsproj" />
+		<ProjectReference Include="..\..\..\jyro\src\Jyro.Compiler\Jyro.Compiler.fsproj" />
+		<ProjectReference Include="..\..\..\jyro\src\Jyro.Core\Jyro.Core.fsproj" />
+		<ProjectReference Include="..\..\..\jyro\src\Jyro.Parser\Jyro.Parser.fsproj" />
+		<ProjectReference Include="..\..\..\jyro\src\Jyro.Stdlib\Jyro.Stdlib.fsproj" />
+		<ProjectReference Include="..\..\..\jyro-http\src\Jyro.Http\Jyro.Http.csproj" />
+	</ItemGroup>
+
+</Project>
