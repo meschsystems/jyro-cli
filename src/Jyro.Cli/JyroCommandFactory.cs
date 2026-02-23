@@ -26,10 +26,10 @@ internal sealed class JyroCommandFactory
         var rootCommand = new RootCommand(
             "Jyro - an imperative data manipulation language for secure, sandboxed processing of JSON-like data structures.");
 
-        rootCommand.AddCommand(CreateCompileCommand());
-        rootCommand.AddCommand(CreateRunCommand());
-        rootCommand.AddCommand(CreateValidateCommand());
-        rootCommand.AddCommand(CreateTestCommand());
+        rootCommand.Subcommands.Add(CreateCompileCommand());
+        rootCommand.Subcommands.Add(CreateRunCommand());
+        rootCommand.Subcommands.Add(CreateValidateCommand());
+        rootCommand.Subcommands.Add(CreateTestCommand());
 
         return rootCommand;
     }
@@ -40,57 +40,55 @@ internal sealed class JyroCommandFactory
     private static Command CreateCompileCommand()
     {
         var command = new Command("compile", "Compile a .jyro script to .jyrx precompiled binary");
-        command.AddAlias("c");
+        command.Aliases.Add("c");
 
         var inputOption = new Option<string>("--input-script-file")
         {
             Description = "Path to the Jyro script to compile",
-            IsRequired = true
+            Required = true
         };
-        inputOption.AddAlias("-i");
+        inputOption.Aliases.Add("-i");
 
         var outputOption = new Option<string?>("--output-file")
         {
             Description = "Output path for the .jyrx file (defaults to same name with .jyrx extension)"
         };
-        outputOption.AddAlias("-o");
+        outputOption.Aliases.Add("-o");
 
         var (pluginOption, pluginDirOption, pluginRecursiveOption) = CreatePluginOptions();
         var (logFileOption, verbosityOption, quietOption, consoleLoggingOption, logFormatOption) = CreateLoggingOptions();
 
-        command.AddOption(inputOption);
-        command.AddOption(outputOption);
-        command.AddOption(pluginOption);
-        command.AddOption(pluginDirOption);
-        command.AddOption(pluginRecursiveOption);
-        command.AddOption(logFileOption);
-        command.AddOption(verbosityOption);
-        command.AddOption(quietOption);
-        command.AddOption(consoleLoggingOption);
-        command.AddOption(logFormatOption);
+        command.Options.Add(inputOption);
+        command.Options.Add(outputOption);
+        command.Options.Add(pluginOption);
+        command.Options.Add(pluginDirOption);
+        command.Options.Add(pluginRecursiveOption);
+        command.Options.Add(logFileOption);
+        command.Options.Add(verbosityOption);
+        command.Options.Add(quietOption);
+        command.Options.Add(consoleLoggingOption);
+        command.Options.Add(logFormatOption);
 
-        command.SetHandler(async (context) =>
+        command.SetAction(async (ParseResult parseResult, CancellationToken cancellationToken) =>
         {
-            var parseResult = context.ParseResult;
-            var inputFile = parseResult.GetValueForOption(inputOption)!;
-            var outputFile = parseResult.GetValueForOption(outputOption);
-            var plugins = parseResult.GetValueForOption(pluginOption);
-            var pluginDirs = parseResult.GetValueForOption(pluginDirOption);
-            var pluginRecursiveDirs = parseResult.GetValueForOption(pluginRecursiveOption);
+            var inputFile = parseResult.GetValue(inputOption)!;
+            var outputFile = parseResult.GetValue(outputOption);
+            var plugins = parseResult.GetValue(pluginOption);
+            var pluginDirs = parseResult.GetValue(pluginDirOption);
+            var pluginRecursiveDirs = parseResult.GetValue(pluginRecursiveOption);
 
             using var loggerFactory = CreateLoggerFactory(
-                parseResult.GetValueForOption(logFileOption),
-                parseResult.GetValueForOption(verbosityOption),
-                parseResult.GetValueForOption(quietOption),
-                parseResult.GetValueForOption(consoleLoggingOption),
-                parseResult.GetValueForOption(logFormatOption));
+                parseResult.GetValue(logFileOption),
+                parseResult.GetValue(verbosityOption),
+                parseResult.GetValue(quietOption),
+                parseResult.GetValue(consoleLoggingOption),
+                parseResult.GetValue(logFormatOption));
             var logger = loggerFactory.CreateLogger("Jyro.Cli.Compile");
 
             if (!File.Exists(inputFile))
             {
                 WriteError($"Error: Input script file not found: {inputFile}");
-                context.ExitCode = 1;
-                return;
+                return 1;
             }
 
             logger.LogInformation("Compiling {InputFile}", inputFile);
@@ -115,8 +113,7 @@ internal sealed class JyroCommandFactory
             catch (Exception ex)
             {
                 WriteError($"Error loading plugins: {ex.Message}");
-                context.ExitCode = 1;
-                return;
+                return 1;
             }
 
             var result = builder.CompileToBytes();
@@ -124,8 +121,7 @@ internal sealed class JyroCommandFactory
             if (!result.IsSuccess)
             {
                 PrintDiagnostics(result.Messages);
-                context.ExitCode = 1;
-                return;
+                return 1;
             }
 
             outputFile ??= Path.ChangeExtension(inputFile, ".jyrx");
@@ -133,7 +129,7 @@ internal sealed class JyroCommandFactory
             await File.WriteAllBytesAsync(outputFile, bytes);
             Console.WriteLine($"Compiled {inputFile} -> {outputFile} ({bytes.Length} bytes)");
             logger.LogInformation("Compilation complete. Output: {OutputFile} ({Size} bytes)", outputFile, bytes.Length);
-            context.ExitCode = 0;
+            return 0;
         });
 
         return command;
@@ -145,43 +141,43 @@ internal sealed class JyroCommandFactory
     private static Command CreateRunCommand()
     {
         var command = new Command("run", "Run a .jyro script or .jyrx binary");
-        command.AddAlias("r");
+        command.Aliases.Add("r");
 
         var inputOption = new Option<string?>("--input-script-file")
         {
             Description = "Path to the Jyro script or .jyrx binary to execute"
         };
-        inputOption.AddAlias("-i");
+        inputOption.Aliases.Add("-i");
 
         var dataOption = new Option<string?>("--data-json-file")
         {
             Description = "JSON file providing the script's Data object (defaults to empty object)"
         };
-        dataOption.AddAlias("-d");
+        dataOption.Aliases.Add("-d");
 
         var outputOption = new Option<string?>("--output-json-file")
         {
             Description = "Output file for script results (defaults to stdout)"
         };
-        outputOption.AddAlias("-o");
+        outputOption.Aliases.Add("-o");
 
         var logFileOption = new Option<string?>("--log-file")
         {
             Description = "File for logging output (defaults to console only)"
         };
-        logFileOption.AddAlias("-l");
+        logFileOption.Aliases.Add("-l");
 
         var logLevelOption = new Option<LogLevel?>("--verbosity")
         {
             Description = "Minimum log level (Trace, Debug, Information, Warning, Error, Critical, None)"
         };
-        logLevelOption.AddAlias("-v");
+        logLevelOption.Aliases.Add("-v");
 
         var noLoggingOption = new Option<bool>("--quiet")
         {
             Description = "Disable all logging output"
         };
-        noLoggingOption.AddAlias("-q");
+        noLoggingOption.Aliases.Add("-q");
 
         var consoleLoggingOption = new Option<bool?>("--console-logging")
         {
@@ -192,13 +188,13 @@ internal sealed class JyroCommandFactory
         {
             Description = "Path to JSON configuration file (searches default locations if not specified)"
         };
-        configOption.AddAlias("-c");
+        configOption.Aliases.Add("-c");
 
         var statsOption = new Option<bool>("--stats")
         {
             Description = "Display per-stage pipeline timing statistics"
         };
-        statsOption.AddAlias("-s");
+        statsOption.Aliases.Add("-s");
 
         var logFormatOption = new Option<string?>("--log-format")
         {
@@ -207,30 +203,29 @@ internal sealed class JyroCommandFactory
 
         var (pluginOption, pluginDirOption, pluginRecursiveOption) = CreatePluginOptions();
 
-        command.AddOption(inputOption);
-        command.AddOption(dataOption);
-        command.AddOption(outputOption);
-        command.AddOption(logFileOption);
-        command.AddOption(logLevelOption);
-        command.AddOption(noLoggingOption);
-        command.AddOption(consoleLoggingOption);
-        command.AddOption(logFormatOption);
-        command.AddOption(configOption);
-        command.AddOption(statsOption);
-        command.AddOption(pluginOption);
-        command.AddOption(pluginDirOption);
-        command.AddOption(pluginRecursiveOption);
+        command.Options.Add(inputOption);
+        command.Options.Add(dataOption);
+        command.Options.Add(outputOption);
+        command.Options.Add(logFileOption);
+        command.Options.Add(logLevelOption);
+        command.Options.Add(noLoggingOption);
+        command.Options.Add(consoleLoggingOption);
+        command.Options.Add(logFormatOption);
+        command.Options.Add(configOption);
+        command.Options.Add(statsOption);
+        command.Options.Add(pluginOption);
+        command.Options.Add(pluginDirOption);
+        command.Options.Add(pluginRecursiveOption);
 
-        command.SetHandler(async (context) =>
+        command.SetAction(async (ParseResult parseResult, CancellationToken cancellationToken) =>
         {
-            var parseResult = context.ParseResult;
 
             // Build configuration with proper precedence: Command-line > Environment > Config file > Defaults
             var configBuilder = new ConfigurationBuilder();
             configBuilder.SetBasePath(Directory.GetCurrentDirectory());
 
             // 1. Start with JSON config file (lowest priority)
-            var configPath = parseResult.GetValueForOption(configOption);
+            var configPath = parseResult.GetValue(configOption);
             if (string.IsNullOrWhiteSpace(configPath))
             {
                 configPath = FindConfigurationFile();
@@ -247,62 +242,62 @@ internal sealed class JyroCommandFactory
             // 3. Add command-line arguments (highest priority)
             var cmdLineConfig = new Dictionary<string, string?>();
 
-            if (parseResult.GetValueForOption(inputOption) is string inputScript)
+            if (parseResult.GetValue(inputOption) is string inputScript)
             {
                 cmdLineConfig["InputScriptFile"] = inputScript;
             }
 
-            if (parseResult.GetValueForOption(dataOption) is string dataFile)
+            if (parseResult.GetValue(dataOption) is string dataFile)
             {
                 cmdLineConfig["DataJsonFile"] = dataFile;
             }
 
-            if (parseResult.GetValueForOption(outputOption) is string outputFile)
+            if (parseResult.GetValue(outputOption) is string outputFile)
             {
                 cmdLineConfig["OutputJsonFile"] = outputFile;
             }
 
-            if (parseResult.GetValueForOption(logFileOption) is string logFile)
+            if (parseResult.GetValue(logFileOption) is string logFile)
             {
                 cmdLineConfig["LogFile"] = logFile;
             }
 
-            if (parseResult.GetValueForOption(logLevelOption) is LogLevel logLevel)
+            if (parseResult.GetValue(logLevelOption) is LogLevel logLevel)
             {
                 cmdLineConfig["LogLevel"] = logLevel.ToString();
             }
 
-            if (parseResult.GetValueForOption(noLoggingOption))
+            if (parseResult.GetValue(noLoggingOption))
             {
                 cmdLineConfig["NoLogging"] = "true";
             }
 
-            if (parseResult.GetValueForOption(consoleLoggingOption) is bool consoleLogging)
+            if (parseResult.GetValue(consoleLoggingOption) is bool consoleLogging)
             {
                 cmdLineConfig["ConsoleLogging"] = consoleLogging.ToString();
             }
 
-            if (parseResult.GetValueForOption(statsOption))
+            if (parseResult.GetValue(statsOption))
             {
                 cmdLineConfig["Stats"] = "true";
             }
 
-            if (parseResult.GetValueForOption(pluginOption) is string plugins)
+            if (parseResult.GetValue(pluginOption) is string plugins)
             {
                 cmdLineConfig["PluginAssemblies"] = plugins;
             }
 
-            if (parseResult.GetValueForOption(pluginDirOption) is string pluginDirs)
+            if (parseResult.GetValue(pluginDirOption) is string pluginDirs)
             {
                 cmdLineConfig["PluginDirectories"] = pluginDirs;
             }
 
-            if (parseResult.GetValueForOption(pluginRecursiveOption) is string pluginRecursiveDirs)
+            if (parseResult.GetValue(pluginRecursiveOption) is string pluginRecursiveDirs)
             {
                 cmdLineConfig["PluginRecursiveDirectories"] = pluginRecursiveDirs;
             }
 
-            if (parseResult.GetValueForOption(logFormatOption) is string logFormat)
+            if (parseResult.GetValue(logFormatOption) is string logFormat)
             {
                 cmdLineConfig["LogFormat"] = logFormat;
             }
@@ -316,8 +311,7 @@ internal sealed class JyroCommandFactory
             if (string.IsNullOrWhiteSpace(inputScriptFile))
             {
                 WriteError("Error: --input-script-file (-i) is required.");
-                context.ExitCode = 1;
-                return;
+                return 1;
             }
 
             // Build host with IOptions pattern
@@ -374,7 +368,7 @@ internal sealed class JyroCommandFactory
                 .Build();
 
             var executor = host.Services.GetRequiredService<IJyroScriptExecutor>();
-            context.ExitCode = await executor.ExecuteAsync();
+            return await executor.ExecuteAsync();
         });
 
         return command;
@@ -386,56 +380,53 @@ internal sealed class JyroCommandFactory
     private static Command CreateValidateCommand()
     {
         var command = new Command("validate", "Verify a .jyrx binary is a correct compilation of a .jyro source file");
-        command.AddAlias("v");
+        command.Aliases.Add("v");
 
         var compiledOption = new Option<string>("--compiled")
         {
             Description = "Path to the compiled .jyrx binary file",
-            IsRequired = true
+            Required = true
         };
 
         var rawOption = new Option<string>("--raw")
         {
             Description = "Path to the original .jyro source file",
-            IsRequired = true
+            Required = true
         };
 
         var (logFileOption, verbosityOption, quietOption, consoleLoggingOption, logFormatOption) = CreateLoggingOptions();
 
-        command.AddOption(compiledOption);
-        command.AddOption(rawOption);
-        command.AddOption(logFileOption);
-        command.AddOption(verbosityOption);
-        command.AddOption(quietOption);
-        command.AddOption(consoleLoggingOption);
-        command.AddOption(logFormatOption);
+        command.Options.Add(compiledOption);
+        command.Options.Add(rawOption);
+        command.Options.Add(logFileOption);
+        command.Options.Add(verbosityOption);
+        command.Options.Add(quietOption);
+        command.Options.Add(consoleLoggingOption);
+        command.Options.Add(logFormatOption);
 
-        command.SetHandler(async (context) =>
+        command.SetAction(async (ParseResult parseResult, CancellationToken cancellationToken) =>
         {
-            var parseResult = context.ParseResult;
-            var compiledPath = parseResult.GetValueForOption(compiledOption)!;
-            var rawPath = parseResult.GetValueForOption(rawOption)!;
+            var compiledPath = parseResult.GetValue(compiledOption)!;
+            var rawPath = parseResult.GetValue(rawOption)!;
 
             using var loggerFactory = CreateLoggerFactory(
-                parseResult.GetValueForOption(logFileOption),
-                parseResult.GetValueForOption(verbosityOption),
-                parseResult.GetValueForOption(quietOption),
-                parseResult.GetValueForOption(consoleLoggingOption),
-                parseResult.GetValueForOption(logFormatOption));
+                parseResult.GetValue(logFileOption),
+                parseResult.GetValue(verbosityOption),
+                parseResult.GetValue(quietOption),
+                parseResult.GetValue(consoleLoggingOption),
+                parseResult.GetValue(logFormatOption));
             var logger = loggerFactory.CreateLogger("Jyro.Cli.Validate");
 
             if (!File.Exists(compiledPath))
             {
                 WriteError($"Error: Compiled file not found: {compiledPath}");
-                context.ExitCode = 1;
-                return;
+                return 1;
             }
 
             if (!File.Exists(rawPath))
             {
                 WriteError($"Error: Source file not found: {rawPath}");
-                context.ExitCode = 1;
-                return;
+                return 1;
             }
 
             logger.LogInformation("Validating {CompiledFile} against {SourceFile}", compiledPath, rawPath);
@@ -447,8 +438,7 @@ internal sealed class JyroCommandFactory
             if (!headerResult.IsSuccess)
             {
                 PrintDiagnostics(headerResult.Messages);
-                context.ExitCode = 1;
-                return;
+                return 1;
             }
 
             // Compute SHA256 of the raw source file
@@ -463,7 +453,7 @@ internal sealed class JyroCommandFactory
                 Console.WriteLine($"[PASS]: {compiledPath} is a valid representation of {rawPath}");
                 Console.ResetColor();
                 logger.LogInformation("Validation passed");
-                context.ExitCode = 0;
+                return 0;
             }
             else
             {
@@ -474,7 +464,7 @@ internal sealed class JyroCommandFactory
                 Console.ResetColor();
                 logger.LogWarning("Validation failed. Source hash: {SourceHash}, Compiled hash: {CompiledHash}",
                     Convert.ToHexString(sourceHash), Convert.ToHexString(storedHash));
-                context.ExitCode = 1;
+                return 1;
             }
         });
 
@@ -487,82 +477,79 @@ internal sealed class JyroCommandFactory
     private static Command CreateTestCommand()
     {
         var command = new Command("test", "Run a script and compare output against expected JSON");
-        command.AddAlias("t");
+        command.Aliases.Add("t");
 
         var inputOption = new Option<string>("--input-script-file")
         {
             Description = "Path to the Jyro script or .jyrx binary to execute",
-            IsRequired = true
+            Required = true
         };
-        inputOption.AddAlias("-i");
+        inputOption.Aliases.Add("-i");
 
         var dataOption = new Option<string?>("--data-json-file")
         {
             Description = "JSON file providing the script's Data object (defaults to empty object)"
         };
-        dataOption.AddAlias("-d");
+        dataOption.Aliases.Add("-d");
 
         var expectedOutputOption = new Option<string>("--output-json-file")
         {
             Description = "Path to the expected output JSON file to compare against",
-            IsRequired = true
+            Required = true
         };
-        expectedOutputOption.AddAlias("-o");
+        expectedOutputOption.Aliases.Add("-o");
 
         var testStatsOption = new Option<bool>("--stats")
         {
             Description = "Display per-stage pipeline timing statistics"
         };
-        testStatsOption.AddAlias("-s");
+        testStatsOption.Aliases.Add("-s");
 
         var (pluginOption, pluginDirOption, pluginRecursiveOption) = CreatePluginOptions();
         var (logFileOption, verbosityOption, quietOption, consoleLoggingOption, logFormatOption) = CreateLoggingOptions();
 
-        command.AddOption(inputOption);
-        command.AddOption(dataOption);
-        command.AddOption(expectedOutputOption);
-        command.AddOption(testStatsOption);
-        command.AddOption(pluginOption);
-        command.AddOption(pluginDirOption);
-        command.AddOption(pluginRecursiveOption);
-        command.AddOption(logFileOption);
-        command.AddOption(verbosityOption);
-        command.AddOption(quietOption);
-        command.AddOption(consoleLoggingOption);
-        command.AddOption(logFormatOption);
+        command.Options.Add(inputOption);
+        command.Options.Add(dataOption);
+        command.Options.Add(expectedOutputOption);
+        command.Options.Add(testStatsOption);
+        command.Options.Add(pluginOption);
+        command.Options.Add(pluginDirOption);
+        command.Options.Add(pluginRecursiveOption);
+        command.Options.Add(logFileOption);
+        command.Options.Add(verbosityOption);
+        command.Options.Add(quietOption);
+        command.Options.Add(consoleLoggingOption);
+        command.Options.Add(logFormatOption);
 
-        command.SetHandler(async (context) =>
+        command.SetAction(async (ParseResult parseResult, CancellationToken cancellationToken) =>
         {
-            var parseResult = context.ParseResult;
-            var inputFile = parseResult.GetValueForOption(inputOption)!;
-            var dataFile = parseResult.GetValueForOption(dataOption);
-            var expectedFile = parseResult.GetValueForOption(expectedOutputOption)!;
-            var showStats = parseResult.GetValueForOption(testStatsOption);
-            var plugins = parseResult.GetValueForOption(pluginOption);
-            var pluginDirs = parseResult.GetValueForOption(pluginDirOption);
-            var pluginRecursiveDirs = parseResult.GetValueForOption(pluginRecursiveOption);
+            var inputFile = parseResult.GetValue(inputOption)!;
+            var dataFile = parseResult.GetValue(dataOption);
+            var expectedFile = parseResult.GetValue(expectedOutputOption)!;
+            var showStats = parseResult.GetValue(testStatsOption);
+            var plugins = parseResult.GetValue(pluginOption);
+            var pluginDirs = parseResult.GetValue(pluginDirOption);
+            var pluginRecursiveDirs = parseResult.GetValue(pluginRecursiveOption);
 
             using var loggerFactory = CreateLoggerFactory(
-                parseResult.GetValueForOption(logFileOption),
-                parseResult.GetValueForOption(verbosityOption),
-                parseResult.GetValueForOption(quietOption),
-                parseResult.GetValueForOption(consoleLoggingOption),
-                parseResult.GetValueForOption(logFormatOption),
+                parseResult.GetValue(logFileOption),
+                parseResult.GetValue(verbosityOption),
+                parseResult.GetValue(quietOption),
+                parseResult.GetValue(consoleLoggingOption),
+                parseResult.GetValue(logFormatOption),
                 useStdErr: true);
             var logger = loggerFactory.CreateLogger("Jyro.Cli.Test");
 
             if (!File.Exists(inputFile))
             {
                 WriteError($"Error: Input script file not found: {inputFile}");
-                context.ExitCode = 1;
-                return;
+                return 1;
             }
 
             if (!File.Exists(expectedFile))
             {
                 WriteError($"Error: Expected output file not found: {expectedFile}");
-                context.ExitCode = 1;
-                return;
+                return 1;
             }
 
             logger.LogInformation("Testing {InputFile} against {ExpectedFile}", inputFile, expectedFile);
@@ -574,8 +561,7 @@ internal sealed class JyroCommandFactory
                 if (!File.Exists(dataFile))
                 {
                     WriteError($"Error: Data file not found: {dataFile}");
-                    context.ExitCode = 1;
-                    return;
+                    return 1;
                 }
                 var dataJson = await File.ReadAllTextAsync(dataFile);
                 data = JyroValue.FromJson(dataJson, FSharpOption<JsonSerializerOptions>.None);
@@ -608,8 +594,7 @@ internal sealed class JyroCommandFactory
             catch (Exception ex)
             {
                 WriteError($"Error loading plugins: {ex.Message}");
-                context.ExitCode = 1;
-                return;
+                return 1;
             }
 
             JyroPipelineStats? stats = null;
@@ -638,8 +623,7 @@ internal sealed class JyroCommandFactory
                 Console.WriteLine($"[FAIL]: Execution of {inputFile} failed:");
                 Console.ResetColor();
                 PrintDiagnostics(result.Messages);
-                context.ExitCode = 1;
-                return;
+                return 1;
             }
 
             var resultValue = FSharpOption<JyroValue>.get_IsSome(result.Value)
@@ -649,8 +633,7 @@ internal sealed class JyroCommandFactory
             if (resultValue == null)
             {
                 WriteError("[FAIL]: Execution returned null result.");
-                context.ExitCode = 1;
-                return;
+                return 1;
             }
 
             // Serialize actual output
@@ -660,13 +643,14 @@ internal sealed class JyroCommandFactory
             var expectedJson = await File.ReadAllTextAsync(expectedFile);
             var mismatches = JsonComparer.Compare(expectedJson, actualJson);
 
+            int exitCode;
             if (mismatches.Count == 0)
             {
                 Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine($"[PASS]: {inputFile} correctly produced output identical to {expectedFile}");
                 Console.ResetColor();
                 logger.LogInformation("Test passed");
-                context.ExitCode = 0;
+                exitCode = 0;
             }
             else
             {
@@ -679,13 +663,15 @@ internal sealed class JyroCommandFactory
                     Console.WriteLine($"    {m.Path}: expected {m.Expected}, got {m.Actual}");
                 }
                 logger.LogWarning("Test failed with {Count} difference(s)", mismatches.Count);
-                context.ExitCode = 1;
+                exitCode = 1;
             }
 
             if (stats != null)
             {
                 PrintPipelineStats(stats);
             }
+
+            return exitCode;
         });
 
         return command;
@@ -753,19 +739,19 @@ internal sealed class JyroCommandFactory
         {
             Description = "Comma-separated paths to plugin assembly DLL files"
         };
-        pluginOption.AddAlias("-p");
+        pluginOption.Aliases.Add("-p");
 
         var pluginDirOption = new Option<string?>("--plugin-directory")
         {
             Description = "Comma-separated directories to search for plugin DLLs (top-level only)"
         };
-        pluginDirOption.AddAlias("-pd");
+        pluginDirOption.Aliases.Add("-pd");
 
         var pluginRecursiveOption = new Option<string?>("--plugin-recursive")
         {
             Description = "Comma-separated directories to search recursively for plugin DLLs"
         };
-        pluginRecursiveOption.AddAlias("-pr");
+        pluginRecursiveOption.Aliases.Add("-pr");
 
         return (pluginOption, pluginDirOption, pluginRecursiveOption);
     }
@@ -779,19 +765,19 @@ internal sealed class JyroCommandFactory
         {
             Description = "File for logging output (defaults to console only)"
         };
-        logFileOption.AddAlias("-l");
+        logFileOption.Aliases.Add("-l");
 
         var verbosityOption = new Option<LogLevel?>("--verbosity")
         {
             Description = "Minimum log level (Trace, Debug, Information, Warning, Error, Critical, None)"
         };
-        verbosityOption.AddAlias("-v");
+        verbosityOption.Aliases.Add("-v");
 
         var quietOption = new Option<bool>("--quiet")
         {
             Description = "Disable all logging output"
         };
-        quietOption.AddAlias("-q");
+        quietOption.Aliases.Add("-q");
 
         var consoleLoggingOption = new Option<bool?>("--console-logging")
         {

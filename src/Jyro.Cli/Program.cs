@@ -27,7 +27,7 @@ internal static class Program
         {
             var commandFactory = new JyroCommandFactory();
             var rootCommand = commandFactory.CreateRootCommand();
-            return await rootCommand.InvokeAsync(args);
+            return await rootCommand.Parse(args).InvokeAsync();
         }
         catch (FileNotFoundException ex)
         {
