@@ -61,7 +61,9 @@
       <RegistryValue Root="HKLM" Key="Software\Classes\Jyro.SourceFile" Type="string" Value="Jyro Source File" />
       <RegistryValue Root="HKLM" Key="Software\Classes\Jyro.SourceFile\DefaultIcon" Type="string" Value="[INSTALLFOLDER]Jyro.exe,0" />
       <RegistryValue Root="HKLM" Key="Software\Classes\Jyro.SourceFile\shell\open\command" Type="string" Value="&quot;[INSTALLFOLDER]Jyro.exe&quot; run -i &quot;%1&quot;" />
-      <RegistryValue Root="HKLM" Key="Software\Classes\Jyro.SourceFile\shell\edit" Type="string" Value="Edit" />
+      <RegistryValue Root="HKLM" Key="Software\Classes\Jyro.SourceFile\shell\editwithvscode" Type="string" Value="Edit with VS Code" />
+      <RegistryValue Root="HKLM" Key="Software\Classes\Jyro.SourceFile\shell\editwithvscode\command" Type="string" Value="code &quot;%1&quot;" />
+      <RegistryValue Root="HKLM" Key="Software\Classes\Jyro.SourceFile\shell\edit" Type="string" Value="Edit with Notepad" />
       <RegistryValue Root="HKLM" Key="Software\Classes\Jyro.SourceFile\shell\edit\command" Type="string" Value="notepad.exe &quot;%1&quot;" />
 
       <!-- .jyrx - Jyro Binary File (run with Jyro only) -->

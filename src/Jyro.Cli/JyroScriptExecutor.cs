@@ -96,6 +96,7 @@ internal sealed class JyroScriptExecutor : IJyroScriptExecutor
         var builder = new JyroBuilder()
             .WithCompiledBytes(compiledBytes)
             .WithData(data)
+            .UseStdlib()
             .UseHttpFunctions()
             .AddFunction(new LogFunction(_logger));
 
@@ -132,6 +133,7 @@ internal sealed class JyroScriptExecutor : IJyroScriptExecutor
         var builder = new JyroBuilder()
             .WithSource(script)
             .WithData(data)
+            .UseStdlib()
             .UseHttpFunctions()
             .AddFunction(new LogFunction(_logger));
 

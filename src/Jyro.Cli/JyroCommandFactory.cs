@@ -94,7 +94,10 @@ internal sealed class JyroCommandFactory
             logger.LogInformation("Compiling {InputFile}", inputFile);
 
             var source = await File.ReadAllTextAsync(inputFile);
-            var builder = new JyroBuilder().WithSource(source).UseHttpFunctions();
+            var builder = new JyroBuilder()
+                .WithSource(source)
+                .UseStdlib()
+                .UseHttpFunctions();
 
             // Load plugin functions
             try
@@ -574,6 +577,7 @@ internal sealed class JyroCommandFactory
             // Build and execute
             var builder = new JyroBuilder()
                 .WithData(data)
+                .UseStdlib()
                 .UseHttpFunctions()
                 .AddFunction(new LogFunction(logger));
 
