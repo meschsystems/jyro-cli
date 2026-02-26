@@ -10,7 +10,7 @@
 		<PackageId>Mesch.Jyro.Cli</PackageId>
 		<AssemblyName>Jyro</AssemblyName>
 		<RootNamespace>Jyro.Cli</RootNamespace>
-		<Version>0.9.24</Version>
+		<Version>0.9.30</Version>
 		<Authors>Mesch Systems</Authors>
 		<Company>Mesch Systems</Company>
 		<Summary>Command line interpreter for the Jyro language.</Summary>
@@ -22,18 +22,22 @@
 		<Copyright>Copyright © 2025-2026 Mesch Systems.</Copyright>
 		<PackageTags>jyro;command;scripting;json;language;sandbox;commandline</PackageTags>
 
-		<!-- IL2040/IL2104: trim warnings internal to FSharp.Core and FParsecCS NuGet packages -->
-		<NoWarn>IL2040;IL2104</NoWarn>
+		<!-- IL2040/IL2104: trim warnings internal to FSharp.Core and FParsecCS NuGet packages
+		     IL2026: Expression.Property in Jyro.Compiler uses reflection by design -->
+		<NoWarn>IL2040;IL2104;IL2026</NoWarn>
 	</PropertyGroup>
 
 	<ItemGroup>
 		<PackageReference Include="FSharp.Core" Version="10.0.103" />
 		<PackageReference Include="System.CommandLine" Version="2.0.3" />
-		<PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.0" />
-		<PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.0" />
-		<PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.0" />
-		<PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="9.0.0" />
-		<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.3" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.3" />
+		<PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.3" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.3" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.3" />
+		<!-- Suppress Mesch.Jyro NuGet assets brought in transitively by Jyro.Http;
+		     all Jyro assemblies are provided via ProjectReferences below. -->
+		<PackageReference Include="Mesch.Jyro" Version="0.9.23" ExcludeAssets="all" PrivateAssets="all" />
 		<ProjectReference Include="..\..\..\jyro\src\Jyro.Api\Jyro.Api.fsproj" />
 		<ProjectReference Include="..\..\..\jyro\src\Jyro.Compiler\Jyro.Compiler.fsproj" />
 		<ProjectReference Include="..\..\..\jyro\src\Jyro.Core\Jyro.Core.fsproj" />
